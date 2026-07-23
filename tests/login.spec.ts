@@ -1,29 +1,27 @@
 import { test, expect } from '@playwright/test';
+import { LoginPage } from '../pages/LoginPage';
 
-test.describe('Login', () => {
+test.describe('Login', () => { 
+    let loginPage: LoginPage;
+
     test.beforeEach(async ({page}) => {
-        await page.goto('https://www.saucedemo.com/');
+        loginPage = new LoginPage(page);
+        await loginPage.goto();
     });
 
     test('user can log in with valid credentials', async ({page}) => {
-        await page.getByPlaceholder('Username').fill('standard_user');
-        await page.getByPlaceholder('Password').fill('secret_sauce');
-        await page.getByRole('button', {name: 'Login'}).click();
+        await loginPage.login('standard_user', 'secret_sauce');
 
         await expect(page).toHaveURL(/inventory/);
         await expect(page.getByText('Products')).toBeVisible();
     });
 
     test('user sees an error with invalid credentials', async ({page}) => {
-        await page.getByPlaceholder('Username').fill('invalid_user');
-        await page.getByPlaceholder('Password').fill('wrong_password');
-        await page.getByRole('button', {name: 'Login'}).click();
+        await loginPage.login('invalid_user', 'wrong_password');
 
-        await expect(
-            page.getByText(
-                'Epic sadface: Username and password do not match any user in this service',
-            ),
-        ).toBeVisible();
+        await expect(loginPage.errorMessage).toContainText(
+        'Username and password do not match',
+    );
 
         await expect(page).toHaveURL('https://www.saucedemo.com/');
     })
